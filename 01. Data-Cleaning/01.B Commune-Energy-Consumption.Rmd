@@ -1,0 +1,109 @@
+---
+title: "Electricity-Consumption"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+
+```
+
+```{r}
+data <-  read_csv(paste0("~/Documents/PROJECT-CLONES/Data-Storage/",
+                         "AirQualityData/",
+                         "Electricity-Consumption-Secteur-Activity.csv"))
+
+```
+
+
+```{r}
+data <- data |> 
+  select(where(~any(!is.na(.)))) |> 
+  rename_all(~tolower(.)) |> 
+  rename_all(~gsub(" ", "_", .)) |> 
+  select(code_commune,
+         code_grand_secteur,
+         nb_sites,
+         `conso_totale_(mwh)`) |> 
+  rename(conso_totale_mwh = `conso_totale_(mwh)`) |> 
+  arrange(code_commune) |> 
+  group_by(code_commune) |> 
+  arrange(code_grand_secteur, .by_group = TRUE) |> 
+  ungroup() |> 
+  group_by(code_commune,
+           code_grand_secteur) |> 
+  summarise(nb_sites         = sum(nb_sites, na.rm = TRUE),
+            conso_totale_mwh = sum(conso_totale_mwh, na.rm = TRUE)) |> 
+  ungroup()
+
+
+```
+
+
+```{r}
+nbsites <- data |> 
+  select(code_commune,
+         code_grand_secteur,
+         nb_sites) |> 
+  arrange(code_grand_secteur) |> 
+  pivot_wider(names_from = code_grand_secteur,
+              values_from = nb_sites,
+              id_cols = code_commune) |> 
+  rename_all(~tolower(.)) |> 
+  rowwise() |> 
+  mutate(secteur_tous = sum(c_across(agriculture:tertiaire),
+                            na.rm = TRUE)) |> 
+  ungroup() |> 
+  rename_at(vars(agriculture:secteur_tous),
+            function(x){
+              
+              x = paste0("nb_sites_", x)
+              
+            })
+
+conso_total <- data |> 
+  select(code_commune,
+         code_grand_secteur,
+         conso_totale_mwh) |> 
+  arrange(code_grand_secteur) |> 
+  pivot_wider(names_from  = code_grand_secteur,
+              values_from = conso_totale_mwh,
+              id_cols     = code_commune) |> 
+  rename_all(~tolower(.)) |> 
+  rowwise() |> 
+  mutate(secteur_tous = sum(c_across(agriculture:tertiaire),
+                            na.rm = TRUE)) |> 
+  ungroup() |> 
+  rename_at(vars(agriculture:secteur_tous),
+            function(x){
+              
+              x = paste0("conso_totale_", x)
+              
+            })
+
+rm(list = ls(pattern = "data"))
+```
+
+
+```{r}
+EnergyData <- conso_total |> 
+  full_join(nbsites,
+            by = "code_commune")
+
+```
+
+```{r}
+rm(list = ls(pattern = "conso_total|nbsites"))
+
+```
+
+```{r}
+write_csv(EnergyData,
+          paste0("/Users/antonioraphael/Documents/",
+                 "PROJECT-CLONES/Data-Storage/AirQualityData/",
+                 "Clean_Data/Commune_Energy_Data.csv"))
+
+```
+
+
