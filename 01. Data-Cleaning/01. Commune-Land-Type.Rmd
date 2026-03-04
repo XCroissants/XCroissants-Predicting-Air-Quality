@@ -1,0 +1,162 @@
+---
+title: "Land-Type-Data"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+
+```
+
+
+```{r}
+data <- read_csv("~/Documents/PROJECT-CLONES/Data-Storage/AirQualityData/lcz_communes.csv")
+
+```
+
+
+```{r}
+data <- data |> 
+  rename(building_Height_m = hre,
+         Building_Area_m2 = are,
+         Building_Area_rate = bur,
+         Perc_Impermeable_Mineral_Surface = ror,
+         Perc_Permeable_Bare_Soil = bsr,
+         Perc_Water_Surface_Area = war,
+         Perc_Vegetation = ver,
+         Perc_Tree_Veg_intot_Veg = vhr,
+         LCZ_Typology = lcz) |> 
+  select(-c(lcz_int,
+            objectid,
+            nomcomto,
+            shape_leng,
+            numdep,
+            fusioinsee,
+            st_lengths)) |> 
+  select(insee, 
+         nomcom,
+         identifier,
+         st_areasha,
+         area_m2,
+         LCZ_Typology,
+         everything())
+
+
+```
+
+
+```{r}
+# temp <- data |> 
+#   select(Building_Area_rate:Perc_Vegetation) |> 
+#   rowwise() |> 
+#   mutate(Test = sum(c_across(Building_Area_rate:Perc_Vegetation),
+#                    na.rm = TRUE)) |> 
+#   ungroup() 
+
+# Summing the percentages, all sum to effectively 100%, some only sum to 99.98%
+```
+
+
+```{r}
+data <- data |> 
+  mutate(Perc_Tree_Veg_intot_Veg = Perc_Tree_Veg_intot_Veg/100,
+         Perc_Non_Tree = 1 - Perc_Tree_Veg_intot_Veg) |> 
+  mutate(Perc_Vegetation_Tree = Perc_Vegetation * Perc_Tree_Veg_intot_Veg,
+         Perc_Vegetation_Non_Tree = Perc_Vegetation * Perc_Non_Tree)  |> 
+  select(-c(Perc_Vegetation,
+            Perc_Non_Tree,
+            Perc_Tree_Veg_intot_Veg)) |> 
+  mutate_at(vars(Building_Area_rate:Perc_Vegetation_Non_Tree),
+            function(x){
+              
+              x = as.numeric(x)
+              
+              x = x / 100
+              
+            }) |> 
+  mutate(Building_Area_rate               = Building_Area_rate * area_m2,
+         Perc_Impermeable_Mineral_Surface = Perc_Impermeable_Mineral_Surface * area_m2,
+         Perc_Permeable_Bare_Soil         = Perc_Permeable_Bare_Soil * area_m2,
+         Perc_Water_Surface_Area          = Perc_Water_Surface_Area * area_m2,
+         Perc_Vegetation_Tree             = Perc_Vegetation_Tree * area_m2,
+         Perc_Vegetation_Non_Tree         = Perc_Vegetation_Non_Tree * area_m2
+         )
+
+Commune_Area <- data |> 
+  select(insee,
+         nomcom,
+         st_areasha) |> 
+  distinct()
+
+
+Commune_Area_Data <- data |> 
+  select(-c(nomcom,
+            st_areasha,
+            identifier,
+            LCZ_Typology)) |> 
+  mutate(building_Height_m = as.character(building_Height_m),
+         building_Height_m = na_if(building_Height_m, "0"),
+         building_Height_m = as.numeric(building_Height_m)) |> 
+  group_by(insee) |> 
+  summarise(building_Height_m                = mean(building_Height_m,
+                                                    na.rm = TRUE),
+            area_m2                          = sum(area_m2,
+                                                   na.rm = TRUE),
+            Building_Area_m2                 = sum(Building_Area_m2, 
+                                                   na.rm = TRUE),
+            Building_Area_rate               = sum(Building_Area_rate,
+                                                   na.rm = TRUE),
+            Perc_Impermeable_Mineral_Surface = sum(Perc_Impermeable_Mineral_Surface,
+                                                   na.rm = TRUE),
+            Perc_Permeable_Bare_Soil         = sum(Perc_Permeable_Bare_Soil,
+                                                   na.rm = TRUE),
+            Perc_Water_Surface_Area          = sum(Perc_Water_Surface_Area,
+                                                   na.rm = TRUE),
+            Perc_Vegetation_Tree             = sum(Perc_Vegetation_Tree,
+                                                   na.rm = TRUE),
+            Perc_Vegetation_Non_Tree         = sum(Perc_Vegetation_Non_Tree, 
+                                                   na.rm = TRUE)) |> 
+  ungroup() |> 
+  rename(Area_Building_M2            = Building_Area_rate,
+         Area_Impermeable_Mineral_M2 = Perc_Impermeable_Mineral_Surface,
+         Area_Permeable_Bare_Soil    = Perc_Permeable_Bare_Soil,
+         Area_Water_M2               = Perc_Water_Surface_Area,
+         Area_Tree_Vegetation_M2     = Perc_Vegetation_Tree,
+         Area_Non_Tree_Vegetation_M2 = Perc_Vegetation_Non_Tree
+         ) |> 
+  select(-c(area_m2,
+            Building_Area_m2))
+
+
+
+```
+
+```{r}
+Commune_Area_Data <- Commune_Area_Data |> 
+  left_join(Commune_Area,
+            by = "insee") |> 
+  select(insee,
+         nomcom,
+         st_areasha,
+         everything()) |> 
+  mutate(Perc_Building            = Area_Building_M2            / st_areasha,
+         Perc_Impermeable_Mineral = Area_Impermeable_Mineral_M2 / st_areasha,
+         Perc_Permeable_Bare_Soil = Area_Permeable_Bare_Soil    / st_areasha,
+         Perc_Water               = Area_Water_M2               / st_areasha,
+         Perc_Tree_Vegetation     = Area_Tree_Vegetation_M2     / st_areasha,
+         Perc_Non_Tree_Vegetation = Area_Non_Tree_Vegetation_M2 / st_areasha) |> 
+  rowwise() |> 
+  mutate(Test = sum(c_across(Perc_Building:Perc_Non_Tree_Vegetation)))
+
+```
+
+
+```{r}
+write_csv(Commune_Area_Data,
+          paste0("/Users/antonioraphael/Documents/",
+                 "PROJECT-CLONES/Data-Storage/AirQualityData/",
+                 "Clean_Data/Commune_Land_Data.csv"))
+
+```
+
