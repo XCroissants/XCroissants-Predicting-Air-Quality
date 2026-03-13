@@ -98,6 +98,7 @@ rm(list = ls(pattern = "conso_total|nbsites"))
 
 ```
 
+
 ```{r}
 write_csv(EnergyData,
           paste0("/Users/antonioraphael/Documents/",

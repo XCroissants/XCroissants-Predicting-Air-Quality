@@ -1,0 +1,59 @@
+Variable;Clean_Names
+Code;ninsee
+Libellé;Drop
+"Prélèvements en eau douce selon les usages 2017__
+Alimentation des canaux de navigation";Water_Withdrawal_Canals_2017
+"Consommation annuelle d’électricité et gaz par secteur d'activité 2017__
+Total";Gaz_Total_2017
+"Consommation annuelle d’électricité et gaz par secteur d'activité 2017__
+Résidentiel";Gaz_Residential_2017
+"Consommation annuelle d’électricité et gaz par secteur d'activité 2017__
+Industrie";Gaz_Industry_2017
+"Consommation annuelle d’électricité et gaz par secteur d'activité 2017__
+Tertiaire";Gaz_Tertiary_2017
+"Consommation annuelle d’électricité et gaz par secteur d'activité 2017__
+Agriculture";Gaz_Argiculture_2017
+"Consommation annuelle d’électricité et gaz par secteur d'activité 2017__
+Inconnu";Gaz_Unknown_2017
+"Consommation annuelle d’électricité et gaz par filière 2017__
+Total";Eletricity_Total_2017
+"Consommation annuelle d’électricité et gaz par filière 2017__
+Gaz";Electricity_Gaz_2017
+"Consommation annuelle d’électricité et gaz par filière 2017__
+Électricité";Electricity_Electricity_2017
+"Production électrique annuelle par filière du réseau géré par Enedis 2017__
+Totale";Electricity_Production_Total_2017
+"Production électrique annuelle par filière du réseau géré par Enedis 2017__
+Photovoltaïque";Electricity_Production_Photovoltaique_2017
+"Production électrique annuelle par filière du réseau géré par Enedis 2017__
+Éolien";Electricity_Production_Eolien_2017
+"Production électrique annuelle par filière du réseau géré par Enedis 2017__
+Hydraulique";Electricity_Production_Hydraulic_2017
+"Prélèvements en eau douce selon les usages 2017__
+Volume total des prélèvements";Water_Withdrawal_Total_2017
+"Prélèvements en eau douce selon les usages 2017__
+Refroidissement des centrales électriques";Water_Withdrawal_Cooling_2017
+"Prélèvements en eau douce selon les usages 2017__
+Production d'eau potable";Water_Withdrawal_Drinking_Water_2017
+"Prélèvements en eau douce selon les usages 2017__
+Irrigation";Water_Withdrawal_Irrigation_2017
+"Prélèvements en eau douce selon les usages 2017__
+Industrie et autres activités économiques";Water_Withdrawal_Economic_Activity_2017
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Tertiaire";GHG_Tertiary_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Total";GHG_Total_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Agriculture";GHG_Agriculture_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Autres transports";GHG_Transport_Other_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Déchets";GHG_Trash_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Energie";GHG_Energy_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Industrie hors énergie";GHG_Industry_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Résidentiel";GHG_Residential_2021
+"Emissions de gaz à effet de serre hors puits (PRG), par secteur 2021__
+Routier";GHG_Road_2021
