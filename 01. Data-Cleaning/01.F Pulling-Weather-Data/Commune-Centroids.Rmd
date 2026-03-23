@@ -1,0 +1,46 @@
+---
+title: "Commune-Center-Coordinates"
+output: html_document
+date: "2026-03-04"
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+library(sf)
+library(kableExtra)
+```
+
+
+```{r}
+data <- read_sf(paste0("~/Documents/PROJECT-CLONES/Data-Storage/",
+                       "AirQualityData/communes-dile-de-france-au-01-janvier/",
+                       "communes-dile-de-france-au-01-janvier.shp"))
+
+```
+
+```{r}
+data <- data |> 
+  select(insee, geometry)
+
+centroid <- data |> 
+  mutate(Center = st_centroid(geometry)) |> 
+  select(insee, Center) |> 
+  st_drop_geometry() |> 
+  mutate(Center = as.character(Center),
+         Center = str_remove(Center, "c\\("),
+         Center = str_remove(Center, "\\)")) |> 
+  separate(Center,
+           into = c("Lon", "Lat"),
+           sep = ",",
+           remove = TRUE)
+
+
+write_csv(centroid,
+          paste0("/Users/antonioraphael/Documents/",
+                 "PROJECT-CLONES/Data-Storage/AirQualityData/",
+                 "Clean_Data/Commune_Centroi.csv"))
+```
+
+
+

@@ -1,0 +1,208 @@
+---
+title: "Merging Data"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+library(readxl)
+library(crosswalkr)
+```
+
+```{r}
+AirQuality <- read_csv(paste0("~/Documents/PROJECT-CLONES/Data-Storage/",
+                              "AirQualityData/indices_QA_commune_IDF_2017.csv"))
+
+Weather <- read_csv(paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                           "XCroissants-Predicting-Air-Quality/data/processed/",
+                           "weather_2017_idf.csv"))
+
+LandType <- read_csv(paste0("/Users/antonioraphael/Documents/",
+                            "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                            "data/processed/Commune_Land_Data.csv"))
+
+EnergyActivity <- read_csv(paste0("/Users/antonioraphael/Documents/",
+                                  "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                                  "data/processed/Commune_Energy_Data.csv"))
+
+Transport <- read_csv(paste0("/Users/antonioraphael/Documents/",
+                             "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                             "data/processed/Commune_Transport_Data.csv"))
+
+SocioEcon <- read_delim(paste0("/Users/antonioraphael/Documents/",
+                               "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                               "data/processed/socio_eco_indicators.csv"), 
+                        delim = ";", 
+                        escape_double = FALSE, 
+                        trim_ws = TRUE)
+
+
+energy_indicators <- read_delim(paste0("/Users/antonioraphael/Documents/",
+                                     "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                                     "data/processed/energy_indicators.csv"), 
+                                delim = ";", escape_double = FALSE, trim_ws = TRUE)
+```
+
+
+```{r}
+# Variables <- data.frame(Variable = names(energy_indicators))
+# 
+# write_csv(Variables,
+#           paste0("/Users/antonioraphael/Documents/",
+#                  "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+#                  "data/processed/Energy_Names.csv"))
+
+Crosswalk_Energy <- read_delim(paste0("/Users/antonioraphael/Documents/",
+                                  "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                                  "data/processed/",
+                                  "Energy_Names.csv"), 
+                           delim = ";", 
+                           escape_double = FALSE, 
+                           trim_ws = TRUE)
+
+
+energy_indicators <- crosswalkr::renamefrom(.data      = energy_indicators,
+                                            cw_file    = Crosswalk_Energy,
+                                            raw        = Variable,
+                                            clean      = Clean_Names,
+                                            drop_extra = FALSE)
+
+energy_indicators <- energy_indicators |> 
+  select(-c(Drop))
+
+energy_indicators <- energy_indicators |> 
+  mutate(ninsee = as.character(ninsee))
+
+```
+
+
+```{r}
+
+# Variables <- data.frame(Variable = names(SocioEcon))
+# 
+# write_csv(Variables,
+#           paste0("/Users/antonioraphael/Documents/",
+#                  "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+#                  "data/processed/SocioEcon_Names.csv"))
+
+Crosswalk_SE <- read_delim(paste0("/Users/antonioraphael/Documents/",
+                                  "PROJECT-CLONES/XCroissants-Predicting-Air-Quality/",
+                                  "data/processed/SocioEcon_Names.csv/",
+                                  "Sheet 1-SocioEcon_Names.csv"), 
+                           delim = ";", 
+                           escape_double = FALSE, 
+                           trim_ws = TRUE)
+
+
+SocioEcon <- crosswalkr::renamefrom(.data      = SocioEcon,
+                                    cw_file    = Crosswalk_SE,
+                                    raw        = Variable,
+                                    clean      = Clean_Names,
+                                    drop_extra = FALSE)
+
+SocioEcon <- SocioEcon |> 
+  select(-c(Drop))
+```
+
+```{r}
+SocioEcon <- SocioEcon |> 
+  mutate(across(where(is.character), function(x) {
+    x <- as.character(x)
+    x <- gsub(",", ".", x, fixed = TRUE)
+    x <- as.numeric(x)
+  }))
+
+SocioEcon <- SocioEcon |> 
+  rename(ninsee = Ninsee) |> 
+  mutate(ninsee = as.character(ninsee))
+```
+
+```{r}
+LandType <- LandType |> 
+  select(-c(nomcom)) |>
+  rename(ninsee       = insee,
+         commune_area = st_areasha) |> 
+  mutate(ninsee = as.character(ninsee))
+
+```
+
+```{r}
+Transport <- Transport |> 
+  mutate(ninsee = as.character(ninsee))
+
+```
+
+```{r}
+EnergyActivity <- EnergyActivity |> 
+  rename(ninsee = code_commune) |> 
+  mutate(ninsee = as.character(ninsee))
+
+```
+
+```{r}
+Weather <- Weather |> 
+  rename(Date   = date,
+         ninsee = insee) |> 
+  mutate(Date = as.Date(Date,
+                        format = "%Y-%m-%d")) |> 
+  mutate(ninsee = as.character(ninsee)) |> 
+  select(-c(latitude, longitude))
+
+```
+
+
+```{r}
+AirQuality <- AirQuality |> 
+  dplyr::filter(!ninsee %in% c("0",
+                               "75",
+                               "77",
+                               "78",
+                               "91",
+                               "92",
+                               "93",
+                               "94",
+                               "95")) |> 
+  mutate(ninsee = as.character(ninsee))
+
+AirQuality <- AirQuality |> 
+  rename(Date = date) |> 
+  mutate(Date = as.Date(Date,
+                        format = "%d/%m/%Y")) |> 
+  mutate(ninsee = as.character(ninsee))
+
+```
+
+```{r}
+AirQuality <- AirQuality |> 
+  left_join(Weather,
+            by = c("ninsee", "Date")) |> 
+  left_join(LandType,
+            by = c("ninsee")) |> 
+  left_join(Transport,
+            by = c("ninsee")) |> 
+  left_join(EnergyActivity,
+            by = c("ninsee")) |> 
+  left_join(SocioEcon,
+            by = c("ninsee")) |> 
+  left_join(energy_indicators,
+            by = c("ninsee"))
+
+
+```
+
+```{r}
+rm(list = ls(pattern = "Energy|LandType|SocioEcon|Transport|Weather|Crosswalk|energy"))
+gc()
+gc()
+```
+
+
+```{r}
+write_csv(AirQuality,
+          paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                 "Data-Storage/AirQualityData/PredictionData/",
+                 "AirQualityData_Full.csv"))
+
+```
+

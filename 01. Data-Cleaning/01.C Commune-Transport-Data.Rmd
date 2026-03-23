@@ -1,0 +1,53 @@
+---
+title: "Transport-Data"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+library(readxl)
+```
+
+```{r}
+transport <- read_excel(paste0("~/Documents/PROJECT-CLONES/Data-Storage/",
+                               "AirQualityData/transport.xlsx"),
+                        col_types = "text")
+
+```
+
+
+```{r}
+transport <- transport |> 
+  mutate_at(vars(Autoroute:`Total général`),
+            function(x){
+              
+              x = as.character(x)
+              
+              x = replace_na(x, "0")
+              
+              x = as.numeric(x)
+              
+            }) |> 
+  rename_at(vars(Autoroute:`Total général`),
+            function(x){
+              
+              x = tolower(x)
+              
+              x = gsub(" ", "_", x)
+              
+              x = paste0("transport_", x)
+            
+              
+            })
+
+```
+
+
+```{r}
+write_csv(transport,
+          paste0("/Users/antonioraphael/Documents/",
+                 "PROJECT-CLONES/Data-Storage/AirQualityData/",
+                 "Clean_Data/Commune_Transport_Data.csv"))
+
+```
