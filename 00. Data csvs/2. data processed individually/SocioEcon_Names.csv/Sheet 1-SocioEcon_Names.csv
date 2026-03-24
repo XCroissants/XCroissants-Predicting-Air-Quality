@@ -1,0 +1,83 @@
+Variable;Clean_Names
+Code;Ninsee
+Libellé;Drop
+Population au dernier recensement 2016;population_2016
+Variation annuelle de la population 2016-2022;population_varation_2016_2022
+Taux de mortalité 2016-2022;Mortality_Rate_2016_2022
+Taux de natalité 2016-2022;Natality_Rate_2016_2022
+Nombre de 15-29 ans 2016;Pop_Age_15_29
+Nombre de moins de 15 ans 2016;Pop_Age_15_Under
+Nombre de 30-44 ans 2016;Pop_Age_30_44
+Nombre de 45-59 ans 2016;Pop_Age_45_59
+Nombre de 60-74 ans 2016;Pop_Age_60_74
+Nombre de 75-79 ans 2016;Pop_Age_70_79
+Nombre de 80-84 ans 2016;Pop_Age_80_84
+Nombre de 85-89 ans 2016;Pop_Age_85_89
+Nombre de 90 ans et plus 2016;Pop_Age_90_Over
+Indice de vieillissement 2016;Aging_Index_2016
+Indice de jeunesse 2016;Youth_Index_2016
+Indicateur de dépendance économique 2016;Economic_Dependence
+Taille moyenne des ménages 2016;Avg_Household_Size_2016
+"Nombre d'établissements par secteurs d'activité 2020_x000d_
+Ensemble";Active_Sector_Business_Combined
+"Nombre d'établissements par secteurs d'activité 2020_x000d_
+Industrie";Active_Sector_Business_Industry
+"Nombre d'établissements par secteurs d'activité 2020_x000d_
+Agriculture, sylviculture, pêche";Active_Sector_Business_Agriculture
+"Nombre d'établissements par secteurs d'activité 2020_x000d_
+Construction";Active_Sector_Business_Construction
+"Nombre d'établissements par secteurs d'activité 2020_x000d_
+Commerce, transports et services divers";Active_Sector_Business_Transport
+"Nombre d'établissements par secteurs d'activité 2020_x000d_
+Administration publique, enseignement, santé et action sociale";Active_Sector_Business_Public_Sector
+"Nombre de postes salariés par secteurs d'activité 2020_x000d_
+Agriculture, sylviculture, pêche";Active_Jobs_Agriculture
+"Nombre de postes salariés par secteurs d'activité 2020_x000d_
+Industrie";Active_Jobs_Industry
+"Nombre de postes salariés par secteurs d'activité 2020_x000d_
+Construction";Active_Jobs_Construction
+"Nombre de postes salariés par secteurs d'activité 2020_x000d_
+Commerce, transports et services divers";Active_Jobs_Transport
+"Nombre de postes salariés par secteurs d'activité 2020_x000d_
+Administration publique, enseignement, santé et action sociale";Active_Jobs_Public_Sector
+"Nombre de postes salariés par secteurs d'activité 2020_x000d_
+Ensemble";Active_Jobs_Combined
+"Nombre de chômeurs de 15-64 ans 2016_x000d_
+Ensemble";Unemployed_15_64
+"Taux de chômage des 15-64 ans (RP) 2016_x000d_
+Ensemble";Unemployment_Rate_15_64
+"Nombre de personnes en âge de travailler (15-64 ans) 2016_x000d_
+Ensemble";Working_Age_People
+"Nombre d'actifs de 15-64 ans 2016_x000d_
+Ensemble";Labor_Market_Participants
+"Nombre d'inactifs de 15-64 ans 2016_x000d_
+Ensemble";Labor_Market_Inactive
+"Nombre d'actifs occupés de 15-64 ans 2016_x000d_
+Ensemble";Labor_Market_Employed
+Nombre d'emplois au lieu de travail 2016;Number_Jobs
+Nombre annuel moyen de logements commencés (constructions neuves) 2015-2019;Avg_New_Housing_Starts
+Surface moyenne des logements commencés (constructions neuves) 2015-2019;Avg_Size_Housing_Starts
+"Type d'occupation des logements 2016_x000d_
+Occupation dans la norme";Housing_Occupancy_Standard
+"Type d'occupation des logements 2016_x000d_
+Sur-occupation";Housing_Occupied_Overcrowded
+"Type d'occupation des logements 2016_x000d_
+Sur-occupation-modéré";Housing_Occupied_Overcrowded_Moderate
+"Type d'occupation des logements 2016_x000d_
+Sur-occupation accentuée";Housing_Occupied_Overcrowded_Severe
+"Type d'occupation des logements 2016_x000d_
+Sous-occupation...45";Housing_Occupied_Undercrowded
+"Type d'occupation des logements 2016_x000d_
+Sous-occupation...46";Housing_Occupied_Undercrowded_2
+"Type d'occupation des logements 2016_x000d_
+Sous-occupation accentuée";Housing_Occupied_Undercrowded_Severe
+"Type d'occupation des logements 2016_x000d_
+Sous-occupation très accentuée";Housing_Occupied_Undercrowded_Very_Severe
+Nombre de logements commencés (constructions neuves) par an pour 1 000 habitants 2015-2019;Housing_Starts_per_100k
+Part des déplacements domicile-travail en voiture 2016.x;Home_to_Work_Car_Commute
+Part des revenus d'activité 2021;Share_Business_Income_2021
+Médiane du revenu disponible par UC 2021;Median_Disposible_Income_2021
+Taux de pauvreté (seuil à 60% du revenu médian) 2021;Poverty_Rate_2021
+Part des déplacements domicile-travail en transports en commun 2016;Home_to_Work_Public_Transport
+Part des déplacements domicile-travail en deux roues 2016;Home_to_Work_Two_Wheel
+Part des déplacements domicile-travail en voiture 2016.y;Home_to_Work_Car_Commute_2
