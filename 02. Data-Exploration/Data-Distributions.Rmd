@@ -1,0 +1,79 @@
+---
+title: "Summary Statistics and Visualization-1"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+```{r, echo = FALSE, message = FALSE}
+library(tidyverse)
+library(conflicted)
+library(readxl)
+library(kableExtra)
+```
+
+
+```{r, echo = FALSE, message = FALSE}
+AirQuality <- read_csv(paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                              "Data-Storage/AirQualityData/Final-Data/",
+                              "AirQualityData_Imputed_Final.csv"))
+
+```
+
+
+```{r, echo = FALSE, message = FALSE}
+Drop_Vars <- AirQuality |> 
+  summarise_all(~(sum(is.na(.)))) |> 
+  gather(key = "Variable",
+         value = "Value") |> 
+  mutate(Percent = Value / 473200) |> 
+  dplyr::filter(Percent > .2)
+
+AirQuality <- AirQuality |> 
+  select(-c(any_of(Drop_Vars$Variable)))
+```
+
+
+```{r, echo = FALSE, message = FALSE}
+Child_function <- function(Variable){ # specify parameter arguments to be passed to child env
+
+    child_env <- new.env() # create new environment
+
+    res <- knitr::knit_child(
+      paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+             "XCroissants-Predicting-Air-Quality/",
+             "02. Data-Exploration/Child-Markdowns/",
+             "Summary-Statistics.Rmd"), # child document
+      envir = child_env, # child env
+      quiet = TRUE
+    )
+
+    cat(res, sep = '\n') # concatenate to parent document
+
+}
+
+
+```
+
+
+```{r, echo = FALSE, message = FALSE}
+Parameters <- data.frame(Variable = names(AirQuality))
+
+Parameters <- Parameters |> 
+  dplyr::filter(!Variable %in% c("Date",
+                                 "ninsee",
+                                 "no2",
+                                 "o3",
+                                 "pm10"))
+
+Parameters <- data.frame(Variable = Parameters[1:50, ])
+```
+
+
+```{r, echo = FALSE, message = FALSE, results = 'asis'}
+invisible(pmap(Parameters, Child_function))
+
+
+```
