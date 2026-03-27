@@ -1,16 +1,3 @@
-"""
-ML Pipeline: County-based train/test split + LightGBM with Optuna tuning
--------------------------------------------------------------------------
-Assumptions:
-  - df is a pandas DataFrame with one row per observation
-  - 'county_id' column identifies the county each observation belongs to
-  - 'target' column is the continuous outcome you want to predict
-  - All other columns are features
-
-Dependencies:
-    pip install lightgbm optuna scikit-learn pandas numpy
-"""
-
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
@@ -19,54 +6,22 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold
 
 
-# ── 1. County-based train/test split ─────────────────────────────────────────
+train = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Train-Communes.csv")
+test = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Test-Communes.csv")
+data = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/Data-Storage/AirQualityData/PredictionData/AirQualityData_Imputed_Feature_Engineered.csv")
 
-def county_train_test_split(
-    df: pd.DataFrame,
-    county_col: str = "county_id",
-    test_size: float = 0.2,
-    random_state: int = 42,
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Split a dataset into train and test by county, not by row.
+train_df = data[data['ninsee'].isin(train['Commune'])]
+test_df = data[data['ninsee'].isin(test['Commune'])]
 
-    All observations from a given county land entirely in train or entirely
-    in test — no county straddles the boundary. This gives an honest estimate
-    of how well the model generalises to counties it has never seen.
-
-    Args:
-        df:           Full dataset with a county identifier column.
-        county_col:   Name of the column containing county IDs.
-        test_size:    Fraction of counties to hold out for testing (default 0.2).
-        random_state: Random seed for reproducibility.
-
-    Returns:
-        (train_df, test_df) — two DataFrames, split by county.
-    """
-    rng = np.random.default_rng(random_state)
-
-    counties = df[county_col].unique()
-    n_test = max(1, int(len(counties) * test_size))
-
-    test_counties = rng.choice(counties, size=n_test, replace=False)
-    train_counties = np.setdiff1d(counties, test_counties)
-
-    train_df = df[df[county_col].isin(train_counties)].copy()
-    test_df  = df[df[county_col].isin(test_counties)].copy()
-
-    print(f"Total counties : {len(counties)}")
-    print(f"Train counties : {len(train_counties)}  ({len(train_df):,} rows)")
-    print(f"Test counties  : {len(test_counties)}   ({len(test_df):,} rows)")
-
-    return train_df, test_df
-
+train_df_pm10 = train_df.drop(columns = ['o3', 'no2'])
+test_df_pm10 = test_df.drop(columns = ['o3', 'no2'])
 
 # ── 2. LightGBM — Optuna tuning + final fit ───────────────────────────────────
 
 def tune_and_fit_lgbm(
     train_df: pd.DataFrame,
     target_col: str = "target",
-    county_col: str = "county_id",
+    commune_col: str = "ninsee",
     n_trials: int = 50,
     cv_folds: int = 5,
     random_state: int = 42,
@@ -92,19 +47,19 @@ def tune_and_fit_lgbm(
         best_params — dict of best hyperparameters found by Optuna
         feature_cols — list of feature column names used
     """
-    feature_cols = [c for c in train_df.columns if c not in [target_col, county_col]]
-    X_train = train_df[feature_cols].values
-    y_train = train_df[target_col].values
-    counties_train = train_df[county_col].values
+    feature_cols = [c for c in train_df.columns if c not in [target_col, commune_col, "Date"]]
+    X_train = train_df[feature_cols]
+    y_train = train_df[target_col]
+    communes_train = train_df[commune_col]
 
     # Build county-level CV folds
-    unique_counties = np.unique(counties_train)
+    unique_communes = np.unique(communes_train)
     kf = KFold(n_splits=cv_folds, shuffle=True, random_state=random_state)
-    county_folds = list(kf.split(unique_counties))   # splits over counties
+    commune_folds = list(kf.split(unique_communes))   # splits over counties
 
-    def get_row_indices(county_subset):
+    def get_row_indices(communes_subset):
         """Return row indices in train_df whose county is in county_subset."""
-        mask = np.isin(counties_train, county_subset)
+        mask = np.isin(communes_train, communes_subset)
         return np.where(mask)[0]
 
     # ── Optuna objective ──────────────────────────────────────────────────────
@@ -125,15 +80,15 @@ def tune_and_fit_lgbm(
         }
 
         fold_scores = []
-        for train_county_idx, val_county_idx in county_folds:
-            train_counties_fold = unique_counties[train_county_idx]
-            val_counties_fold   = unique_counties[val_county_idx]
+        for train_communes_idx, val_communes_idx in commune_folds:
+            train_communes_fold = unique_communes[train_communes_idx]
+            val_communes_fold   = unique_communes[val_communes_idx]
 
-            tr_idx  = get_row_indices(train_counties_fold)
-            val_idx = get_row_indices(val_counties_fold)
+            tr_idx  = get_row_indices(train_communes_fold)
+            val_idx = get_row_indices(val_communes_fold)
 
-            X_tr,  y_tr  = X_train[tr_idx],  y_train[tr_idx]
-            X_val, y_val = X_train[val_idx], y_train[val_idx]
+            X_tr,  y_tr  = X_train.iloc[tr_idx],  y_train.iloc[tr_idx]
+            X_val, y_val = X_train.iloc[val_idx], y_train.iloc[val_idx]
 
             model = lgb.LGBMRegressor(**params)
             model.fit(
@@ -145,7 +100,7 @@ def tune_and_fit_lgbm(
                 ],
             )
             preds = model.predict(X_val, num_iteration=model.best_iteration_)
-            fold_scores.append(mean_squared_error(y_val, preds, squared=False))  # RMSE
+            fold_scores.append(mean_squared_error(y_val, preds) ** 0.5)
 
         return np.mean(fold_scores)
 
@@ -186,11 +141,11 @@ def tune_and_fit_lgbm(
 
 def evaluate(model, test_df: pd.DataFrame, feature_cols: list[str], target_col: str = "target"):
     """Print RMSE and R² on the held-out test counties."""
-    X_test = test_df[feature_cols].values
-    y_test = test_df[target_col].values
+    X_test = test_df[feature_cols]
+    y_test = test_df[target_col]
 
     preds = model.predict(X_test, num_iteration=model.best_iteration_)
-    rmse  = mean_squared_error(y_test, preds, squared=False)
+    rmse = mean_squared_error(y_test, preds) ** 0.5
     r2    = r2_score(y_test, preds)
 
     print(f"\nTest set performance (unseen counties):")
@@ -198,33 +153,15 @@ def evaluate(model, test_df: pd.DataFrame, feature_cols: list[str], target_col: 
     print(f"  R²   : {r2:.4f}")
     return preds
 
-
-# ── 4. Example usage ─────────────────────────────────────────────────────────
-
 if __name__ == "__main__":
-    # Replace this block with your actual data loading
-    rng = np.random.default_rng(0)
-    n_obs, n_features, n_counties = 500_000, 140, 1287
-
-    county_ids = rng.integers(0, n_counties, size=n_obs)
-    X_demo = rng.standard_normal((n_obs, n_features))
-    y_demo = X_demo[:, :5].sum(axis=1) + rng.standard_normal(n_obs) * 0.5
-
-    df = pd.DataFrame(X_demo, columns=[f"f{i}" for i in range(n_features)])
-    df["county_id"] = county_ids
-    df["target"]    = y_demo
-
-    # 1. Split by county
-    train_df, test_df = county_train_test_split(df, county_col="county_id", test_size=0.2)
-
     # 2. Tune and fit LightGBM
     model, best_params, feature_cols = tune_and_fit_lgbm(
-        train_df,
-        target_col="target",
-        county_col="county_id",
+        train_df_pm10,
+        target_col="pm10",
+        commune_col="ninsee",
         n_trials=50,
         cv_folds=5,
     )
 
     # 3. Evaluate on held-out test counties
-    test_preds = evaluate(model, test_df, feature_cols, target_col="target")
+    test_preds = evaluate(model, test_df_pm10, feature_cols, target_col="pm10")
