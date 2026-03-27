@@ -1,0 +1,415 @@
+---
+title: "Feature-Engineering"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+library(car)
+library(forecast)
+```
+
+```{r}
+data <- read_csv(paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                        "Data-Storage/AirQualityData/PredictionData/",
+                        "AirQualityData_Full.csv"))
+
+```
+
+
+```{r}
+Drop_Vars <- c(
+               # "Perc_Building", 
+               # "Perc_Impermeable_Mineral",
+               # "Perc_Permeable_Bare_Soil",
+               # "Perc_Non_Tree_Vegetation",
+               "transport_total_général",
+               "conso_totale_secteur_tous", 
+               "Active_Sector_Business_Combined", 
+               "Active_Sector_Business_Combined", 
+               "Active_Jobs_Combined",
+               "Electricity_Production_Photovoltaique_2017",
+               "Electricity_Production_Eolien_2017",
+               "Electricity_Production_Hydraulic_2017",
+               "Housing_Occupied_Undercrowded_2", 
+               "Housing_Occupied_Overcrowded_Moderate",
+               "Housing_Occupied_Overcrowded_Severe",
+               "GHG_Total_2021", 
+               "nb_sites_secteur_tous", 
+               "Home_to_Work_Car_Commute_2")
+
+
+data <- data |> 
+  select(-c(any_of(Drop_Vars)))
+
+rm(list = ls(pattern = "Drop_Vars"))
+```
+
+
+```{r}
+data <- data |> 
+  rowwise() |> 
+  mutate(Pop_Under_15_29 = sum(c(Pop_Age_15_Under, 
+                                 Pop_Age_15_29),
+                               na.rm = TRUE),
+         Pop_30_64 = sum(c(Pop_Age_30_44,
+                           Pop_Age_45_59,
+                           Pop_Age_60_74),
+                         na.rm = TRUE),
+         Pop_Over64 = sum(c(Pop_Age_70_79,
+                            Pop_Age_80_84,
+                            Pop_Age_85_89,
+                            Pop_Age_90_Over),
+                          na.rm = TRUE)  
+         ) |> 
+  ungroup() |> 
+  select(-c(Pop_Age_15_29:Pop_Age_90_Over)) |> 
+  select(Date:Natality_Rate_2016_2022,
+         Pop_Under_15_29,
+         Pop_30_64,
+         Pop_Over64,
+         everything())
+
+
+```
+
+
+```{r}
+dataYJ <- data |> 
+  select(ninsee,
+         commune_area:Area_Non_Tree_Vegetation_M2,
+         transport_autoroute:GHG_Road_2021) |> 
+  distinct() |> 
+  mutate_at(vars(commune_area:Area_Non_Tree_Vegetation_M2),
+            function(x){
+              
+              x = as.character(x)
+              
+              x = na_if(x, "777")
+              
+              x = as.numeric(x)
+              
+            })
+
+parameters <- names(dataYJ)[2:68]
+
+YJ_Func <- function(Variable){
+  
+  data <- get("dataYJ", parent.frame())
+  
+  data <- data |> 
+    dplyr::filter(!is.na(!!as.symbol(Variable))) |> 
+    mutate(!!as.symbol(Variable) := as.numeric(!!as.symbol(Variable)))
+  
+  Model <- lm(as.formula(paste(Variable, "~ 1")),
+              data = data)
+  
+  bc <- powerTransform(Model, family = "yjPower")
+  
+  lambda_exact     <- bc$lambda          
+  data[[Variable]] <- yjPower(data[[Variable]], lambda_exact)
+  
+  OutData <- data |> 
+    select(ninsee, 
+           !!as.symbol(Variable)) |> 
+    mutate(!!as.symbol(Variable) := as.vector(scale(!!as.symbol(Variable))))
+  
+  OutData <- data.frame(OutData)
+  
+  return(OutData)
+  
+}
+
+dataList <- list()
+
+dataList <- lapply(parameters, YJ_Func)
+
+Transformed_Data <- dataList[[1]]
+
+for (i in 2:length(dataList)){
+  
+  Transformed_Data <- Transformed_Data |>
+    full_join(dataList[[i]])
+    
+  
+}
+```
+
+```{r}
+data <- data |> 
+  select(-c(commune_area:Area_Non_Tree_Vegetation_M2,
+            transport_autoroute:GHG_Road_2021)) |> 
+  left_join(Transformed_Data,
+            by = "ninsee")
+
+rm(list = ls(pattern = "dataList|dataYJ|Transform|i|listLength|parameters|YJ_Func"))
+```
+
+
+```{r}
+TimeInvariant <- data |> 
+  select(ninsee,
+         Perc_Building:GHG_Road_2021)
+
+TimeInvariant <- TimeInvariant |> 
+  select(ninsee,
+         commune_area:Area_Non_Tree_Vegetation_M2,
+         everything()) |> 
+  distinct()
+```
+
+```{r}
+gc()
+gc()
+gc()
+gc()
+
+```
+
+```{r}
+data <- data |> 
+  select(-c(Perc_Building:GHG_Road_2021))
+
+```
+
+
+```{r}
+data <- data |> 
+  arrange(ninsee) |> 
+  group_by(ninsee) |> 
+  arrange(Date, .by_group = TRUE) |> 
+  ungroup()
+
+```
+
+
+
+```{r}
+hw_smooth <- function(x) {
+  
+  ts_data <- ts(x)
+  
+  tryCatch({
+    hw     <- HoltWinters(ts_data, beta = FALSE, gamma = FALSE)
+    fitted <- hw$fitted[, "xhat"]
+    
+    n_pad <- length(x) - length(fitted)
+    c(rep(NA, n_pad), fitted)
+    
+  }, error = function(e) {
+    warning("HoltWinters failed: ", e$message)
+    rep(NA, length(x))
+  })
+  
+}
+
+predictors <- names(data)[3:16]
+
+dataSmoothed <- data |>
+  group_by(ninsee) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(across(
+    all_of(predictors),
+    ~ hw_smooth(.x),   
+    .names = "{.col}"            
+  )) |>
+  ungroup()
+
+dataSmoothed <- dataSmoothed |> 
+  rename_at(vars(no2:wind_direction_10m_dominant),
+            function(x){
+              
+              x = paste0("Smoothed_", x)
+              
+            })
+
+data <- data |> 
+  left_join(dataSmoothed,
+            by = c("ninsee",
+                   "Date"))
+
+rm(list = ls(pattern = "dataSmoothed|predictors|hw"))
+```
+
+```{r}
+Lag_Function <- function(Variable){
+  
+    data <- get("data", parent.frame())
+  
+    data <- data |> 
+      group_by(ninsee) |> 
+      mutate(!!as.symbol(paste0(Variable, "_L2")) := dplyr::lag(!!as.symbol(Variable),
+                                                                n = 1),
+             !!as.symbol(paste0(Variable, "_L3")) := dplyr::lag(!!as.symbol(Variable),
+                                                                n = 2)
+             ) |> 
+      ungroup() |> 
+      select(Date,
+             ninsee,
+             contains(Variable))
+    
+    return(data)
+  
+  
+}
+
+dataList <- list()
+
+parameters <- names(data)[17:30]
+
+dataList <- lapply(parameters, Lag_Function)
+
+Lagged_Data <- dataList[[1]]
+
+for (j in 2:length(dataList)){
+  
+  Lagged_Data <- Lagged_Data |>
+    full_join(dataList[[j]],
+              by = c("ninsee",
+                     "Date"))
+    
+  
+}
+
+data <- data |> 
+  select(-c(contains("Smoothed"))) |> 
+  full_join(Lagged_Data,
+            by = c("Date",
+                   "ninsee")) |> 
+  select(Date,
+         ninsee,
+         no2:pm10,
+         contains("Smoothed_no2"),
+         contains("Smoothed_o3"),
+         contains("Smoothed_pm10"),
+         contains("temperature_2m_mean"),
+         contains("temperature_2m_max"),
+         contains("temperature_2m_min"),
+         contains("daylight_duration"),
+         contains("sunshine_duration"),
+         contains("precipitation_sum"),
+         contains("rain_sum"),
+         contains("snowfall_sum"),
+         contains("wind_speed_10m_max"),
+         contains("wind_gusts_10m_max"),
+         contains("wind_direction_10m_dominant"),
+         everything()
+         )
+
+data <- data |> 
+  dplyr::filter(!is.na(Smoothed_temperature_2m_max_L3))
+```
+
+```{r}
+rm(list = ls(pattern = "Lag_Function|j|parameter|dataList|Lagged"))
+
+```
+
+```{r}
+Day_Month_Controls <- data |> 
+  select(Date) |> 
+  mutate(Day       = weekdays(Date),
+         Monday    = case_when(Day == "Monday" ~ 1,
+                               TRUE ~ 0),
+         Tuesday   = case_when(Day == "Tuesday" ~ 1,
+                               TRUE ~ 0),
+         Wednesday = case_when(Day == "Wednesday" ~ 1,
+                               TRUE ~ 0),
+         Thursday  = case_when(Day == "Thursday" ~ 1,
+                               TRUE ~ 0),
+         Friday    = case_when(Day == "Friday" ~ 1,
+                               TRUE ~ 0),
+         Saturday  = case_when(Day == "Saturday" ~ 1,
+                               TRUE ~ 0),
+         Sunday    = case_when(Day == "Sunday" ~ 1,
+                               TRUE ~ 0)) |> 
+  mutate(Month = str_sub(as.character(Date),
+                         start = 6,
+                         end   = 7),
+         January   = case_when(Month == "01" ~ 1,
+                               TRUE ~ 0),
+         February  = case_when(Month == "02" ~ 1,
+                               TRUE ~ 0),
+         March     = case_when(Month == "03" ~ 1,
+                               TRUE ~ 0),
+         April     = case_when(Month == "04" ~ 1,
+                               TRUE ~ 0),
+         May       = case_when(Month == "05" ~ 1,
+                               TRUE ~ 0),
+         June      = case_when(Month == "06" ~ 1,
+                               TRUE ~ 0),
+         July      = case_when(Month == "07" ~ 1,
+                               TRUE ~ 0),
+         August    = case_when(Month == "08" ~ 1,
+                               TRUE ~ 0),
+         September = case_when(Month == "09" ~ 1,
+                               TRUE ~ 0),
+         October   = case_when(Month == "10" ~ 1,
+                               TRUE ~ 0), 
+         November  = case_when(Month == "11" ~ 1,
+                               TRUE ~ 0),
+         December  = case_when(Month == "12" ~ 1,
+                               TRUE ~ 0)) |> 
+  select(-c(Day, Month)) |> 
+  distinct()
+
+
+data <- data |> 
+  left_join(Day_Month_Controls,
+            by = "Date") 
+
+rm(list = ls(pattern = "Day_Month"))
+```
+
+
+```{r}
+# write_csv(TimeInvariant,
+#           paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+#                  "Data-Storage/AirQualityData/PredictionData/",
+#                  "Data_for_Imputation.csv"))
+
+
+Imputed_Data <- read_csv(paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                           "XCroissants-Predicting-Air-Quality/00. Data csvs/",
+                           "3. Intermediary Data Sets/Imputed_Normalised_KNN_data.csv"))
+```
+
+```{r}
+rm(list = ls(pattern = "TimeInvariant"))
+
+```
+
+```{r}
+Imputed_Data <- Imputed_Data |> 
+  mutate(building_Height_m = case_when(Land_Comp_Missing == 1 ~ NA,
+                                       TRUE ~ building_Height_m)) |> 
+  mutate_at(vars(commune_area:Area_Non_Tree_Vegetation_M2),
+            function(x){
+              
+              x = as.character(x)
+              
+              x = replace_na(x, "777")
+              
+              x = as.numeric(x)
+              
+            }) 
+```
+
+
+```{r}
+data <- data |> 
+  left_join(Imputed_Data,
+            by = "ninsee")
+
+```
+
+
+```{r}
+write_csv(data,
+          paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                 "Data-Storage/AirQualityData/PredictionData/",
+                 "AirQualityData_Imputed_Feature_Engineered.csv"))
+
+```
+
