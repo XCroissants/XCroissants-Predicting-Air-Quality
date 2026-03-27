@@ -1,0 +1,73 @@
+---
+title: "Train-Test-Counties"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+
+```
+
+```{r}
+data <- read_csv(paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                 "Data-Storage/AirQualityData/PredictionData/",
+                 "AirQualityData_Imputed_Feature_Engineered.csv"))
+
+```
+
+```{r}
+data <- data |> 
+  select(ninsee) |> 
+  distinct()
+
+Communes <- data$ninsee
+```
+
+
+```{r}
+set.seed(123)
+
+
+trainCommunes <- sample(x = Communes,
+                  size = 1029,
+                  replace = FALSE)
+
+testCommunes <- Communes[!(Communes %in% trainCommunes)]
+```
+
+```{r}
+trainCommunes = data.frame(Commune = trainCommunes)
+testCommunes  = data.frame(Commune = testCommunes)
+```
+
+
+```{r}
+# test <- inner_join(trainCommunes,
+#                    testCommunes,
+#                    by = "Commune")
+# 
+# 
+# test <- inner_join(testCommunes,
+#                    trainCommunes,
+#                    by = "Commune")
+
+# Exclusive, all good
+```
+
+
+```{r}
+write_csv(trainCommunes,
+          paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                 "XCroissants-Predicting-Air-Quality/03. Prediction/",
+                 "00.A Train-Test-Communes/",
+                 "Train-Communes.csv"))
+
+write_csv(testCommunes,
+          paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                 "XCroissants-Predicting-Air-Quality/03. Prediction/",
+                 "00.A Train-Test-Communes/",
+                 "Test-Communes.csv"))
+
+```
+
