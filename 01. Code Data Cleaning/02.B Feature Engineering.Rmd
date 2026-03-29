@@ -230,6 +230,9 @@ data <- data |>
                    "Date"))
 
 rm(list = ls(pattern = "dataSmoothed|predictors|hw"))
+
+data |> 
+  select(Date, ninsee, contains("pm10")) -> temp
 ```
 
 ```{r}
