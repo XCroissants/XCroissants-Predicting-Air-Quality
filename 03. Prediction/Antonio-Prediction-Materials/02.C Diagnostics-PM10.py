@@ -14,10 +14,10 @@ import seaborn as sns
 from sklearn.metrics import mean_squared_error, r2_score
 import lightgbm as lgb
 
-results_df = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs/predictions_vs_actuals.csv")
-model = lgb.Booster(model_file="/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs/lgbm_pm10_model.txt")
-feature_cols = json.load(open("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs/feature_cols.json"))
-best_params  = json.load(open("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs/best_params.json"))
+results_df = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs-pm10/predictions_vs_actuals.csv")
+model = lgb.Booster(model_file="/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs-pm10/lgbm_pm10_model.txt")
+feature_cols = json.load(open("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs-pm10/feature_cols.json"))
+best_params  = json.load(open("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs-pm10/best_params.json"))
 
 test = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Test-Communes.csv")
 data = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/Data-Storage/AirQualityData/PredictionData/AirQualityData_Imputed_Feature_Engineered.csv")
