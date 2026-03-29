@@ -6,9 +6,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.model_selection import KFold
 
 
-train = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Train-Communes.csv")
-test = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Test-Communes.csv")
-data = pd.read_csv("/Users/antonioraphael/Documents/PROJECT-CLONES/Data-Storage/AirQualityData/PredictionData/AirQualityData_Imputed_Feature_Engineered.csv")
+train = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Train-Communes.csv")
+test = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Test-Communes.csv")
+data = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Downloads/AirQualityData_Imputed_Feature_Engineered.csv")
 
 train_df = data[data['ninsee'].isin(train['Commune'])]
 test_df = data[data['ninsee'].isin(test['Commune'])]
@@ -22,7 +22,7 @@ def tune_and_fit_lgbm(
     train_df: pd.DataFrame,
     target_col: str = "target",
     commune_col: str = "ninsee",
-    n_trials: int = 50,
+    n_trials: int = 40,
     cv_folds: int = 5,
     random_state: int = 42,
 ) -> tuple[lgb.LGBMRegressor, dict, list[str]]:
@@ -65,9 +65,9 @@ def tune_and_fit_lgbm(
     # ── Optuna objective ──────────────────────────────────────────────────────
     def objective(trial: optuna.Trial) -> float:
         params = {
-            "n_estimators"    : 2000,          # controlled by early stopping
+            "n_estimators"    : 500,          # controlled by early stopping
             "learning_rate"   : trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
-            "num_leaves"      : trial.suggest_int("num_leaves", 20, 300),
+            "num_leaves"      : trial.suggest_int("num_leaves", 20, 64),
             "max_depth"       : trial.suggest_int("max_depth", 3, 10),
             "min_child_samples": trial.suggest_int("min_child_samples", 10, 100),
             "subsample"       : trial.suggest_float("subsample", 0.5, 1.0),
@@ -75,7 +75,7 @@ def tune_and_fit_lgbm(
             "reg_alpha"       : trial.suggest_float("reg_alpha", 1e-3, 10.0, log=True),
             "reg_lambda"      : trial.suggest_float("reg_lambda", 1e-3, 10.0, log=True),
             "random_state"    : random_state,
-            "n_jobs"          : -1,
+            "n_jobs"          : 4,
             "verbose"         : -1,
         }
 
@@ -159,9 +159,32 @@ if __name__ == "__main__":
         train_df_pm10,
         target_col="pm10",
         commune_col="ninsee",
-        n_trials=50,
+        n_trials=40,
         cv_folds=5,
     )
 
     # 3. Evaluate on held-out test counties
     test_preds = evaluate(model, test_df_pm10, feature_cols, target_col="pm10")
+
+print(test_preds)
+
+import os, json
+OUTPUT_DIR = "/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+y_true = test_df_pm10["pm10"].values
+y_pred = model.predict(test_df_pm10[feature_cols], num_iteration=model.best_iteration_)
+
+pd.DataFrame({
+    "ninsee"         : test_df_pm10["ninsee"].values,
+    "actual_pm10"    : y_true,
+    "predicted_pm10" : y_pred,
+    "residual"       : y_true - y_pred,
+    "abs_error"      : np.abs(y_true - y_pred),
+}).to_csv(os.path.join(OUTPUT_DIR, "predictions_vs_actuals.csv"), index=False)
+
+model.booster_.save_model(os.path.join(OUTPUT_DIR, "lgbm_pm10_model.txt"))
+json.dump(best_params, open(os.path.join(OUTPUT_DIR, "best_params.json"), "w"), indent=2)
+json.dump(feature_cols, open(os.path.join(OUTPUT_DIR, "feature_cols.json"), "w"), indent=2)
+
+print(f"All outputs saved to {OUTPUT_DIR}")
