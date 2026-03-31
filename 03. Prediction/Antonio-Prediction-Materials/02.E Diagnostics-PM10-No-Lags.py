@@ -58,7 +58,7 @@ def plot_all_diagnostics(model, test_df, feature_cols, target_col="pm10", save_p
 
     fig = plt.figure(figsize=(18, 12))
     fig.suptitle(
-        f"LightGBM pm10 — Test set diagnostics (unseen communes)\n"
+        f"LightGBM pm10: No Air Pollution Lags — Test set diagnostics (unseen communes)\n"
         f"RMSE: {rmse:.4f}  |  R²: {r2:.4f}  |  MAE: {mae:.4f}",
         fontsize=14, fontweight="bold", y=0.98
     )
