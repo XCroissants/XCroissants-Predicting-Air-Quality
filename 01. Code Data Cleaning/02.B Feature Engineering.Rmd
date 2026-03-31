@@ -402,7 +402,6 @@ Imputed_Data <- Imputed_Data |>
 data <- data |> 
   left_join(Imputed_Data,
             by = "ninsee")
-
 ```
 
 

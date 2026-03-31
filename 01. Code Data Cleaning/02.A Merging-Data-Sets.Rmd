@@ -328,8 +328,6 @@ gc()
 
 
 ```{r}
-
-
 write_csv(AirQuality,
           paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
                  "Data-Storage/AirQualityData/PredictionData/",

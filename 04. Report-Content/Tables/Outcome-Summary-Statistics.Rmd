@@ -1,0 +1,55 @@
+---
+title: "Outcome-Summary-Statistics"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(conflicted)
+
+```
+
+
+```{r}
+data <- read_csv(paste0("/Users/antonioraphael/Documents/PROJECT-CLONES/",
+                        "Data-Storage/AirQualityData/PredictionData/",
+                        "AirQualityData_Imputed_Feature_Engineered.csv"))
+
+```
+
+
+```{r}
+data <- data |> 
+  select(no2:pm10) |> 
+  gather(key   = "Variable",
+         value = "Value") |> 
+  mutate(Value = as.numeric(Value)) |> 
+  group_by(Variable) |> 
+  summarise(Minimum        = min(Value),
+            `1st Quartile` = quantile(Value, probs = c(.25)),
+            Median         = median(Value),
+            Mean           = mean(Value),
+            `3rd Quartile` = quantile(Value, probs = c(.75)),
+            Maximum        = max(Value),
+            `Standard Deviation` = sd(Value)) |> 
+  ungroup() |> 
+  gather(key   = "Statistic",
+         value = "Value",
+         -c("Variable")) |> 
+  pivot_wider(names_from = Variable,
+              values_from = Value,
+              id_cols = Statistic) |> 
+  mutate_at(vars(no2:pm10),
+            function(x){
+              
+              x = round(x, digits = 1)
+              
+            })
+
+write_csv(data,
+          paste0("/Users/antonioraphael/Documents/",
+                 "PROJECT-CLONES/",
+                 "XCroissants-Predicting-Air-Quality/",
+                 "04. Report-Content/Tables/",
+                 "Outcome-Summary-Statistics.csv"))
+```
