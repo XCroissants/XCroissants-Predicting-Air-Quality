@@ -8,7 +8,8 @@ from sklearn.model_selection import KFold
 
 train = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Train-Communes.csv")
 test = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/00.A Train-Test-Communes/Test-Communes.csv")
-data = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Downloads/AirQualityData_Imputed_Feature_Engineered.csv")
+#data = pd.read_csv("/users/eleves-b/2025/antonio.raphael/Downloads/AirQualityData_Imputed_Feature_Engineered.csv")
+data = pd.read_csv("https://www.dropbox.com/scl/fi/snny0t6c5h4zcy23nwtz9/AirQualityData_Imputed_Feature_Engineered.csv?rlkey=hj7nbjuve3cp8ecvxvwbfeh8m&st=vtqbw1l9&dl=1")
 
 train_df = data[data['ninsee'].isin(train['Commune'])]
 test_df = data[data['ninsee'].isin(test['Commune'])]
