@@ -169,7 +169,7 @@ if __name__ == "__main__":
 print(test_preds)
 
 import os, json
-OUTPUT_DIR = "/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/Outputs-pm10"
+OUTPUT_DIR = "/users/eleves-b/2025/antonio.raphael/Documents/XCroissants-Predicting-Air-Quality/03. Prediction/LightGBM-Predictions/Outputs-pm10"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 y_true = test_df_pm10["pm10"].values
