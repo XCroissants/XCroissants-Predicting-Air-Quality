@@ -133,7 +133,7 @@ socio-economic, energy production and consumption, and terrain feature data.
 │   │   │   ├── lgbm_pm10_model.txt
 │   │   │   ├── pm10_diagnostics.png
 │   │   │   └── predictions_vs_actuals.csv
-│   │   └── Outputs-pm10-No-Lags
+│   │   └── Outputs-pm10-no-lag
 │   │       ├── best_params.json
 │   │       ├── feature_cols.json
 │   │       ├── lgbm_pm10_model.txt
@@ -167,6 +167,8 @@ socio-economic, energy production and consumption, and terrain feature data.
 │   └── Tables
 │       ├── Outcome-Summary-Statistics.Rmd
 │       └── Outcome-Summary-Statistics.csv
+├── 05. Final-Report
+│   └── Predicting-Air-Pollution-Final-Report.pdf
 ├── README.md
 └── XCroissants-Predicting-Air-Quality.Rproj
 
@@ -225,7 +227,15 @@ in the final report.
  
  ### Elastic-Net-Prediction
  
+Contains all of the code, outputs, and diagnostics for the Elastic Net models. 
+ The process for training the models and the results of the evaluation are
+ discussed at length in the report
+ 
  ### OLS-Predictions
+ 
+  Contains all of the code, outputs, and diagnostics for the OLS models. 
+ The process for training the models and the results of the evaluation are
+ discussed at length in the report
  
  ## 04. Report-Content
  
